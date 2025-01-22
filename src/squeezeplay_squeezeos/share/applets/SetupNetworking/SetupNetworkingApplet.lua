@@ -167,9 +167,8 @@ end
 function _connectionType(self)
 	log:debug('_connectionType')
 
-	assert(self.wlanIface or self.ethIface)
+	-- assert(self.wlanIface or self.ethIface)
 
--- fm+
 	-- Shortcut to use Ethernet immediately if available and link is up
 	if self.ethIface then
 		Task("halfDuplexBugVerification", self,
@@ -177,30 +176,19 @@ function _connectionType(self)
 				local status = self.ethIface:t_wpaStatus()
 				if status.link then
 					return _halfDuplexBugVerification(self, self.ethIface)
-				else
+				elseif self.wlanIface then
 					-- Ethernet available but no link - do a wireless scan
 					return _networkScan(self, self.wlanIface)
 				end
 			end
 		):addTask()
-	else
-		-- Only wireless available - do a wireless scan
-		return _networkScan(self, self.wlanIface)
-	end
--- fm-
-
-
---[[
-	-- short cut if only one interface is available
-	if not self.wlanIface then
-		-- Only ethernet available
-		return _networkScan(self, self.ethIface)
-	elseif not self.ethIface then
-		-- Only wireless available
+	elseif self.wlanIface then
+		-- Is wireless available - then do a wireless scan
 		return _networkScan(self, self.wlanIface)
 	end
 
-	-- ask the user to choose
+
+	-- No networking available, ask the user to choose
 	local window = Window("text_list", self:string("NETWORK_CONNECTION_TYPE"), "setup")
 	window:setAllowScreensaver(false)
 
@@ -231,7 +219,6 @@ function _connectionType(self)
 	_helpAction(self, window, "NETWORK_CONNECTION_HELP", "NETWORK_CONNECTION_HELP_BODY", connectionMenu)
 
 	self:tieAndShowWindow(window)
---]]
 end
 
 
